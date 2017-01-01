@@ -15,7 +15,7 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -36,6 +36,27 @@ char *osi_strdup(const char *str) {
     return NULL;
 
   memcpy(new_string, str, size);
+  return new_string;
+}
+
+char *osi_strndup(const char *str, size_t len) {
+  size_t size = strlen(str);
+  if (len < size)
+    size = len;
+
+  size_t real_size = allocation_tracker_resize_for_canary(size + 1);
+  void *ptr = malloc(real_size);
+  assert(ptr);
+
+  char *new_string = allocation_tracker_notify_alloc(
+      alloc_allocator_id,
+      ptr,
+      size + 1);
+  if (!new_string)
+    return NULL;
+
+  memcpy(new_string, str, size);
+  new_string[size] = '\0';
   return new_string;
 }
 

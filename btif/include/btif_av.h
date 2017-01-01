@@ -46,8 +46,11 @@ typedef enum {
     BTIF_AV_STOP_STREAM_REQ_EVT,
     BTIF_AV_SUSPEND_STREAM_REQ_EVT,
     BTIF_AV_SINK_CONFIG_REQ_EVT,
-    BTIF_AV_CLEANUP_REQ_EVT,
+    BTIF_AV_OFFLOAD_START_REQ_EVT,
     BTIF_AV_SINK_FOCUS_REQ_EVT,
+    BTIF_AV_CLEANUP_REQ_EVT,
+    BTIF_AV_UPDATE_ENCODER_REQ_EVT,
+    BTIF_AV_INIT_REQ_EVT,
 } btif_av_sm_event_t;
 
 
@@ -78,6 +81,17 @@ btif_sm_handle_t btif_av_get_sm_handle(void);
 *******************************************************************************/
 
 bt_bdaddr_t btif_av_get_addr(BD_ADDR address);
+
+/*******************************************************************************
+** Function         btif_av_is_sink_enabled
+**
+** Description      Checks if A2DP Sink is enabled or not
+**
+** Returns          TRUE if A2DP Sink is enabled, false otherwise
+**
+*******************************************************************************/
+
+BOOLEAN btif_av_is_sink_enabled(void);
 
 /*******************************************************************************
 **
@@ -228,6 +242,31 @@ UINT16 btif_av_get_streaming_channel_id(void);
 ********************************************************************************/
 void btif_av_get_peer_addr(bt_bdaddr_t *peer_bda);
 
+#else
+#define btif_av_get_streaming_channel_id() (0)
+#define btif_av_get_peer_addr(peer_bda) (0)
 #endif
+
+/*******************************************************************************
+**
+** Function         btif_av_get_multicast_state
+**
+** Description      Check if A2DP multicast is enabled
+**
+** Returns          TRUE if a2dp multicast is enabled
+**
+*******************************************************************************/
+BOOLEAN btif_av_get_multicast_state();
+
+/*******************************************************************************
+**
+** Function         btif_av_is_multicast_supported
+**
+** Description      Check if A2DP multicast is supported
+**
+** Returns          TRUE if a2dp multicast is supported
+**
+*******************************************************************************/
+BOOLEAN btif_av_is_multicast_supported();
 
 #endif /* BTIF_AV_H */

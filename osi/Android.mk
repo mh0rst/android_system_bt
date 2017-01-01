@@ -40,6 +40,7 @@ LOCAL_SRC_FILES := \
     ./src/future.c \
     ./src/hash_functions.c \
     ./src/hash_map.c \
+    ./src/hash_map_utils.c \
     ./src/list.c \
     ./src/non_repeating_timer.c \
     ./src/reactor.c \

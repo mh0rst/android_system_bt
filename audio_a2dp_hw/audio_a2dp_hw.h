@@ -27,7 +27,7 @@
 
 #ifndef AUDIO_A2DP_HW_H
 #define AUDIO_A2DP_HW_H
-
+#include <pthread.h>
 /*****************************************************************************
 **  Constants & Macros
 ******************************************************************************/
@@ -54,15 +54,45 @@ typedef enum {
     A2DP_CTRL_CMD_STOP,
     A2DP_CTRL_CMD_SUSPEND,
     A2DP_CTRL_GET_AUDIO_CONFIG,
+    A2DP_CTRL_CMD_OFFLOAD_START,
+    A2DP_CTRL_CMD_OFFLOAD_SUPPORTED,
+    A2DP_CTRL_CMD_OFFLOAD_NOT_SUPPORTED,
 } tA2DP_CTRL_CMD;
 
 typedef enum {
     A2DP_CTRL_ACK_SUCCESS,
     A2DP_CTRL_ACK_FAILURE,
-    A2DP_CTRL_ACK_INCALL_FAILURE /* Failure when in Call*/
+    A2DP_CTRL_ACK_INCALL_FAILURE, /* Failure when in Call*/
+    A2DP_CTRL_ACK_UNSUPPORTED
 } tA2DP_CTRL_ACK;
 
+typedef enum {
+    AUDIO_A2DP_STATE_STARTING,
+    AUDIO_A2DP_STATE_STARTED,
+    AUDIO_A2DP_STATE_STOPPING,
+    AUDIO_A2DP_STATE_STOPPED,
+    AUDIO_A2DP_STATE_SUSPENDED, /* need explicit set param call to resume (suspend=false) */
+    AUDIO_A2DP_STATE_STANDBY    /* allows write to autoresume */
+} a2dp_state_t;
 
+struct a2dp_config {
+    uint32_t                rate;
+    uint32_t                channel_flags;
+    int                     format;
+};
+
+/* move ctrl_fd outside output stream and keep open until HAL unloaded ? */
+#define  MAX_CODEC_CFG_SIZE  30
+
+struct a2dp_stream_common {
+    pthread_mutex_t         lock;
+    int                     ctrl_fd;
+    int                     audio_fd;
+    size_t                  buffer_sz;
+    struct a2dp_config      cfg;
+    a2dp_state_t            state;
+    uint8_t                 codec_cfg[MAX_CODEC_CFG_SIZE];
+};
 /*****************************************************************************
 **  Type definitions for callback functions
 ******************************************************************************/

@@ -30,6 +30,8 @@
 #define PERF_SYSTRACE 1
 #endif
 
+#define LOG_TAG "bt_a2dp_hw"
+
 #include <errno.h>
 #include <inttypes.h>
 #include <pthread.h>
@@ -51,9 +53,6 @@
 #include <hardware/hardware.h>
 #include "audio_a2dp_hw.h"
 #include "bt_utils.h"
-
-
-#define LOG_TAG "bt_a2dp_hw"
 #include "osi/include/log.h"
 
 #ifdef BT_AUDIO_SYSTRACE_LOG
@@ -87,15 +86,6 @@ static int number =0;
 **  Local type definitions
 ******************************************************************************/
 
-typedef enum {
-    AUDIO_A2DP_STATE_STARTING,
-    AUDIO_A2DP_STATE_STARTED,
-    AUDIO_A2DP_STATE_STOPPING,
-    AUDIO_A2DP_STATE_STOPPED,
-    AUDIO_A2DP_STATE_SUSPENDED, /* need explicit set param call to resume (suspend=false) */
-    AUDIO_A2DP_STATE_STANDBY    /* allows write to autoresume */
-} a2dp_state_t;
-
 struct a2dp_stream_in;
 struct a2dp_stream_out;
 
@@ -103,23 +93,6 @@ struct a2dp_audio_device {
     struct audio_hw_device device;
     struct a2dp_stream_in  *input;
     struct a2dp_stream_out *output;
-};
-
-struct a2dp_config {
-    uint32_t                rate;
-    uint32_t                channel_flags;
-    int                     format;
-};
-
-/* move ctrl_fd outside output stream and keep open until HAL unloaded ? */
-
-struct a2dp_stream_common {
-    pthread_mutex_t         lock;
-    int                     ctrl_fd;
-    int                     audio_fd;
-    size_t                  buffer_sz;
-    struct a2dp_config      cfg;
-    a2dp_state_t            state;
 };
 
 struct a2dp_stream_out {
@@ -141,7 +114,6 @@ struct a2dp_stream_in {
 /*****************************************************************************
 **  Static functions
 ******************************************************************************/
-
 static size_t out_get_buffer_size(const struct audio_stream *stream);
 
 /*****************************************************************************
@@ -166,6 +138,8 @@ static const char* dump_a2dp_ctrl_event(char event)
         CASE_RETURN_STR(A2DP_CTRL_CMD_STOP)
         CASE_RETURN_STR(A2DP_CTRL_CMD_SUSPEND)
         CASE_RETURN_STR(A2DP_CTRL_CMD_CHECK_STREAM_STARTED)
+        CASE_RETURN_STR(A2DP_CTRL_CMD_OFFLOAD_SUPPORTED)
+        CASE_RETURN_STR(A2DP_CTRL_CMD_OFFLOAD_NOT_SUPPORTED)
         default:
             return "UNKNOWN MSG ID";
     }
@@ -173,12 +147,13 @@ static const char* dump_a2dp_ctrl_event(char event)
 
 static int calc_audiotime(struct a2dp_config cfg, int bytes)
 {
+    int bytes_per_sample = 4;
     int chan_count = popcount(cfg.channel_flags);
 
-    ASSERTC(cfg.format == AUDIO_FORMAT_PCM_16_BIT,
+    ASSERTC(cfg.format == AUDIO_FORMAT_PCM_8_24_BIT,
             "unsupported sample sz", cfg.format);
 
-    return bytes*(1000000/(chan_count*2))/cfg.rate;
+    return (int)(((int64_t)bytes * (1000000 / (chan_count * bytes_per_sample))) / cfg.rate);
 }
 
 static void ts_error_log(char *tag, int val, int buff_size, struct a2dp_config cfg)
@@ -194,7 +169,7 @@ static void ts_error_log(char *tag, int val, int buff_size, struct a2dp_config c
 
     diff_us = (now.tv_sec - prev.tv_sec) * USEC_PER_SEC + (now.tv_nsec - prev.tv_nsec)/1000;
     prev = now;
-    if(diff_us > (calc_audiotime (cfg, buff_size) + 10000L))
+    if(diff_us > (unsigned long long)(calc_audiotime (cfg, buff_size) + 10000L))
     {
        DEBUG("[%s] ts %08lld, diff %08lld, val %d %d", tag, now_us, diff_us, val, buff_size);
     }
@@ -424,7 +399,6 @@ static int check_a2dp_ready(struct a2dp_stream_common *common)
 
 static int a2dp_read_audio_config(struct a2dp_stream_common *common)
 {
-    char cmd = A2DP_CTRL_GET_AUDIO_CONFIG;
     uint32_t sample_rate;
     uint8_t channel_count;
 
@@ -1280,7 +1254,7 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     a2dp_stream_common_init(&out->common);
 
     out->common.cfg.channel_flags = AUDIO_STREAM_DEFAULT_CHANNEL_FLAG;
-    out->common.cfg.format = AUDIO_STREAM_DEFAULT_FORMAT;
+    out->common.cfg.format = AUDIO_FORMAT_PCM_8_24_BIT;
     out->common.cfg.rate = AUDIO_STREAM_DEFAULT_RATE;
 
    /* set output config values */
@@ -1299,6 +1273,11 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
         ERROR("ctrl socket failed to connect (%s)", strerror(errno));
         ret = -1;
         goto err_open;
+    }
+
+    if (a2dp_command(&out->common, A2DP_CTRL_CMD_OFFLOAD_NOT_SUPPORTED) == 0)
+    {
+         DEBUG("Streaming mode set successfully");
     }
 
     INFO("success");
@@ -1499,6 +1478,10 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
         ERROR("ctrl socket failed to connect (%s)", strerror(errno));
         ret = -1;
         goto err_open;
+    }
+
+    if (a2dp_command(&in->common, A2DP_CTRL_CMD_OFFLOAD_NOT_SUPPORTED) == 0) {
+        DEBUG("Streaming mode set successfully");
     }
 
     if (a2dp_read_audio_config(&in->common) < 0) {

@@ -159,6 +159,7 @@ typedef struct {
     btif_rc_reg_notifications_t rc_notif[MAX_RC_NOTIFICATIONS];
     unsigned int                rc_volume;
     uint8_t                     rc_vol_label;
+    BOOLEAN                     rc_features_processed;
     BOOLEAN                     rc_play_processed;
 } btif_rc_cb_t;
 
@@ -267,6 +268,7 @@ static void btif_rc_ctrl_upstreams_rsp_cmd(UINT16 event, tAVRC_COMMAND *pavrc_cm
                                            UINT8* p_buf, UINT16 buf_len, UINT8 index);
 static void btif_rc_ctrl_upstreams_rsp_evt(UINT16 event, tAVRC_RESPONSE *pavrc_resp,
                                            UINT8* p_buf, UINT16 buf_len, UINT8 rsp_type, UINT8 index);
+static bt_status_t getcapabilities_cmd (uint8_t cap_id);
 #endif
 
 /*Added for Browsing Message Response */
@@ -450,12 +452,25 @@ void handle_rc_ctrl_features(int index)
             rc_features |= BTRC_FEAT_ABSOLUTE_VOLUME;
         }
         if ((btif_rc_cb[index].rc_features & BTA_AV_FEAT_METADATA)&&
-            (btif_rc_cb[index].rc_features & BTA_AV_FEAT_VENDOR))
+            (btif_rc_cb[index].rc_features & BTA_AV_FEAT_VENDOR)&&
+            (btif_rc_cb[index].rc_features_processed != TRUE))
         {
             rc_features |= BTRC_FEAT_METADATA;
+            /* Mark rc features processed to avoid repeating
+             * the AVRCP procedure every time on receiving this
+             * update.
+             */
+            if ((btif_rc_cb[index].rc_features_processed == FALSE) &&
+                btif_av_is_sink_enabled())
+            {
+                btif_rc_cb[index].rc_features_processed = TRUE;
+                getcapabilities_cmd (AVRC_CAP_COMPANY_ID);
+            }
         }
         BTIF_TRACE_DEBUG("Update rc features to CTRL %d",rc_features);
-        HAL_CBACK(bt_rc_ctrl_callbacks, getrcfeatures_cb, &rc_addr, rc_features);
+        if (btif_av_is_sink_enabled()) {
+            HAL_CBACK(bt_rc_ctrl_callbacks, getrcfeatures_cb, &rc_addr, rc_features);
+        }
     }
 }
 #endif

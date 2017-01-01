@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright (C) 2014 Google, Inc.
+ *  Copyright (C) 2016 Google, Inc.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,25 +18,20 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdlib.h>
+#if defined(OS_GENERIC)
+#define PROPERTY_VALUE_MAX 92
+#else
+#include <cutils/properties.h>
+#endif  // defined(OS_GENERIC)
 
-typedef void *(*alloc_fn)(size_t size);
-typedef void (*free_fn)(void *ptr);
+// Get value associated with key |key| into |value|.
+// Returns the length of the value which will never be greater than
+// PROPERTY_VALUE_MAX - 1 and will always be zero terminated.
+// (the length does not include the terminating zero).
+// If the property read fails or returns an empty value, the |default_value|
+// is used (if nonnull).
+int osi_property_get(const char *key, char *value, const char *default_value);
 
-typedef struct {
-  alloc_fn alloc;
-  free_fn  free;
-} allocator_t;
-
-// allocator_t abstractions for the osi_*alloc and osi_free functions
-extern const allocator_t allocator_malloc;
-extern const allocator_t allocator_calloc;
-
-char *osi_strdup(const char *str);
-char *osi_strndup(const char *str, size_t len);
-
-void *osi_malloc(size_t size);
-void *osi_calloc(size_t size);
-void osi_free(void *ptr);
+// Write value of property associated with key |key| to |value|.
+// Returns 0 on success, < 0 on failure
+int osi_property_set(const char *key, const char *value);

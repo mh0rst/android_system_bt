@@ -159,6 +159,18 @@
 #define BTA_AV_CO_CP_SCMS_T  FALSE
 #endif
 
+#ifndef BTIF_A2DP_SRC_SAMPLING_RATE
+#define BTIF_A2DP_SRC_SAMPLING_RATE 44100
+#endif
+
+#ifndef BTIF_A2DP_SRC_BIT_DEPTH
+#define BTIF_A2DP_SRC_BIT_DEPTH 32
+#endif
+
+#ifndef BTIF_A2DP_SRC_NUM_CHANNELS
+#define BTIF_A2DP_SRC_NUM_CHANNELS 2
+#endif
+
 #ifndef BTA_AV_DISCONNECT_IF_NO_SCMS_T
 #define BTA_AV_DISCONNECT_IF_NO_SCMS_T  FALSE
 #endif
@@ -196,6 +208,11 @@
 #ifndef HL_INCLUDED
 #define HL_INCLUDED  TRUE
 #endif
+
+#ifndef AAC_ENCODER_INCLUDED
+#define AAC_ENCODER_INCLUDED   TRUE
+#endif
+
 
 #ifndef AG_VOICE_SETTINGS
 #define AG_VOICE_SETTINGS  HCI_DEFAULT_VOICE_SETTINGS
@@ -1377,7 +1394,11 @@ Range: 2 octets
  * Audio*2 + Video*2 + 1 Additional
  */
 #ifndef AVDT_NUM_SEPS
-#define AVDT_NUM_SEPS               5
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+#define AVDT_NUM_SEPS               9
+#else
+#define AVDT_NUM_SEPS               7
+#endif
 #endif
 
 /* Number of transport channels setup per media stream(audio or video) */
@@ -1402,7 +1423,7 @@ Range: 2 octets
 
 /* Maximum size in bytes of the codec capabilities information element. */
 #ifndef AVDT_CODEC_SIZE
-#define AVDT_CODEC_SIZE             10
+#define AVDT_CODEC_SIZE             20
 #endif
 
 /* Maximum size in bytes of the content protection information element. */
@@ -1613,6 +1634,10 @@ Range: 2 octets
  */
 #ifndef A2D_INCLUDED
 #define A2D_INCLUDED            TRUE
+#endif
+
+#ifndef A2D_M24_INCLUDED
+#define A2D_M24_INCLUDED    A2D_INCLUDED
 #endif
 
 /******************************************************************************

@@ -22,18 +22,6 @@
 #include "btif_media.h"
 
 /*******************************************************************************
-**  Constants & Macros
-********************************************************************************/
-
-enum
-{
-    BTIF_SV_AV_AA_SBC_INDEX = 0,
-    BTIF_SV_AV_AA_SBC_SINK_INDEX,
-    BTIF_SV_AV_AA_SEP_INDEX  /* Last index */
-};
-
-
-/*******************************************************************************
 **  Functions
 ********************************************************************************/
 
@@ -114,6 +102,40 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTI
 
 /*******************************************************************************
  **
+ ** Function         bta_av_co_get_current_codec
+ **
+ ** Description      Get the current codec type.
+ **
+ ** Returns          Codec Type Value
+ **
+ *******************************************************************************/
+UINT8 bta_av_co_get_current_codec();
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_get_current_codecInfo
+ **
+ ** Description      Get the current codec Info.
+ **
+ ** Returns          Returns  pointer to Info
+ **
+ *******************************************************************************/
+UINT8* bta_av_co_get_current_codecInfo();
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_audio_get_codec_config
+ **
+ ** Description     Retrieves the current codec configuration.  On Failure return the default
+ **                      codec configuration.
+ **
+ ** Returns          TRUE if codec is SBC, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN bta_av_co_audio_get_codec_config(UINT8 *p_sbc_config, UINT16 *p_minmtu, UINT8 type);
+
+/*******************************************************************************
+ **
  ** Function         bta_av_co_audio_get_sbc_config
  **
  ** Description      Retrieves the SBC codec configuration.  If the codec in use
@@ -123,6 +145,19 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTI
  **
  *******************************************************************************/
 BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_minmtu);
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_audio_get_aac_config
+ **
+ ** Description      Retrieves the AAC codec configuration.  If the codec in use
+ **                  is not AAC, return the default SBC codec configuration.
+ **
+ ** Returns          TRUE if codec is AAC, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN bta_av_co_audio_get_aac_config(tA2D_AAC_CIE *p_aac_config, UINT16 *p_minmtu);
+#endif
 
 /*******************************************************************************
  **
@@ -170,5 +205,17 @@ BOOLEAN bta_av_co_peer_cp_supported(tBTA_AV_HNDL hndl);
  **
  *******************************************************************************/
 BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max);
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_select_codec
+ **
+ ** Description      Select the current codec for the remote device selected
+ **                  for streaming.
+ **
+ ** Returns          Return current codec id
+ **
+ *******************************************************************************/
+UINT8 bta_av_select_codec(tBTA_AV_HNDL hdl);
 
 #endif

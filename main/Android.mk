@@ -128,7 +128,8 @@ LOCAL_C_INCLUDES+= . \
 	$(LOCAL_PATH)/../utils/include \
 	$(bdroid_C_INCLUDES) \
 	external/tinyxml2 \
-	external/zlib
+	external/zlib \
+    $(call include-path-for, audio-utils)
 
 ifeq ($(BOARD_USES_WIPOWER), true)
     LOCAL_C_INCLUDES+= $(LOCAL_PATH)/../wipowerif/include
@@ -154,7 +155,8 @@ LOCAL_SHARED_LIBRARIES := \
     libpower \
     libz \
     libmedia \
-    libutils
+    libutils \
+    libaudioutils
 
 LOCAL_STATIC_LIBRARIES := \
     libtinyxml2 \

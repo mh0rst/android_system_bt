@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef struct alarm_t alarm_t;
@@ -51,6 +52,10 @@ void alarm_set_periodic(alarm_t *alarm, period_ms_t period, alarm_callback_t cb,
 // will not be called if it hasn't already been called. This function is idempotent.
 // |alarm| may not be NULL.
 void alarm_cancel(alarm_t *alarm);
+
+// Tests whether the |alarm| is scheduled.
+// Return true if the |alarm| is scheduled or NULL, otherwise false.
+bool alarm_is_scheduled(const alarm_t *alarm);
 
 // Figure out how much time until next expiration.
 // Returns 0 if not armed. |alarm| may not be NULL.

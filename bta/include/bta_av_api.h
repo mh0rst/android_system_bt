@@ -97,7 +97,11 @@ typedef UINT8 tBTA_AV_HNDL;
 #endif
 
 #ifndef BTA_AV_MAX_SEPS
-#define BTA_AV_MAX_SEPS         2
+#if defined(AAC_ENCODER_INCLUDED) && (AAC_ENCODER_INCLUDED == TRUE)
+#define BTA_AV_MAX_SEPS         4
+#else
+#define BTA_AV_MAX_SEPS         3
+#endif
 #endif
 
 #ifndef BTA_AV_MAX_A2DP_MTU
@@ -125,6 +129,9 @@ typedef UINT8 tBTA_AV_CODEC;
 
 /* Company ID in BT assigned numbers */
 #define BTA_AV_BT_VENDOR_ID     VDP_BT_VENDOR_ID        /* Broadcom Corporation */
+
+/* Offset for codec configuration in codec info */
+#define BTA_AV_CFG_START_IDX    3
 
 /* vendor specific codec ID */
 #define BTA_AV_CODEC_ID_H264    VDP_CODEC_ID_H264       /* Non-VDP codec ID - H.264 */
@@ -250,13 +257,13 @@ typedef UINT8 tBTA_AV_ERR;
 #define BTA_AV_META_MSG_EVT     17      /* metadata messages */
 #define BTA_AV_REJECT_EVT       18      /* incoming connection rejected */
 #define BTA_AV_RC_FEAT_EVT      19      /* remote control channel peer supported features update */
-#define BTA_AV_BROWSE_MSG_EVT   20      /* Browse MSG EVT */
-#define BTA_AV_MEDIA_SINK_CFG_EVT    21      /* command to configure codec */
-#define BTA_AV_MEDIA_DATA_EVT   22      /* sending data to Media Task */
-#define BTA_AV_ROLE_CHANGED_EVT     23
-
+#define BTA_AV_MEDIA_SINK_CFG_EVT    20 /* command to configure codec */
+#define BTA_AV_MEDIA_DATA_EVT   21      /* sending data to Media Task */
+#define BTA_AV_OFFLOAD_START_RSP_EVT 22 /* a2dp offload start response */
+#define BTA_AV_BROWSE_MSG_EVT   23      /* Browse MSG EVT */
+#define BTA_AV_ROLE_CHANGED_EVT     24
 /* Max BTA event */
-#define BTA_AV_MAX_EVT          24
+#define BTA_AV_MAX_EVT          25
 
 typedef UINT8 tBTA_AV_EVT;
 
@@ -474,6 +481,7 @@ typedef union
     tBTA_AV_BROWSE_MSG  browse_msg;
     tBTA_AV_REJECT      reject;
     tBTA_AV_RC_FEAT     rc_feat;
+    tBTA_AV_STATUS      status;
     tBTA_AV_ROLE_CHANGED role_changed;
 } tBTA_AV;
 
@@ -826,6 +834,42 @@ void BTA_AvMetaRsp(UINT8 rc_handle, UINT8 label, tBTA_AV_CODE rsp_code,
 **
 *******************************************************************************/
 void BTA_AvMetaCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CMD cmd_code, BT_HDR *p_pkt);
+
+/*******************************************************************************
+**
+** Function         BTA_AvOffloadStart
+**
+** Description      Request Starting of A2DP Offload.
+**                  This function is used to start A2DP offload if vendor lib has
+**                  the feature enabled.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AvOffloadStart(tBTA_AV_HNDL hndl);
+
+/*******************************************************************************
+**
+** Function         BTA_AvOffloadStartRsp
+**
+** Description      Response from vendor library indicating response for
+**                  OffloadStart.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AvOffloadStartRsp(tBTA_AV_HNDL hndl, tBTA_AV_STATUS status);
+
+/*******************************************************************************
+**
+** Function         bta_av_get_codec_type
+**
+** Description      Returns the codec_type from the most recently used scb
+**
+** Returns          A2D_NON_A2DP_MEDIA_CT or BTIF_AV_CODEC_SBC
+**
+*******************************************************************************/
+UINT8 bta_av_get_codec_type();
 
 #ifdef __cplusplus
 }
